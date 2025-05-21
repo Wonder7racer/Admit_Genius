@@ -1,0 +1,931 @@
+@startuml AdmitGenius类图
+
+' 设置样式
+skinparam classAttributeIconSize 0
+skinparam classFontStyle bold
+skinparam classFontSize 12
+skinparam classBackgroundColor LightBlue
+skinparam classBorderColor Black
+skinparam titleFontSize 18
+skinparam titleFontStyle bold
+skinparam linetype ortho
+skinparam packageStyle rectangle
+
+title AdmitGenius申请管理系统 - 类图
+
+package "用户体系" {
+  abstract class User {
+    -id: int
+    -email: String
+    -password: String
+    -fullName: String
+    -phone: String
+    -avatar: String
+    -lastLoginAt: DateTime
+    -status: UserStatus
+    -createdAt: DateTime
+    -updatedAt: DateTime
+    --
+    +register(): void
+    +login(): AuthToken
+    +resetPassword(): void
+    +updateProfile(): void
+    +getRoles(): List<Role>
+    +isActive(): boolean
+  }
+  
+  class Student {
+    -id: int
+    -gpa: float
+    -targetMajor: String
+    -languageScore: float
+    -toeflScore: int
+    -ieltsScore: float
+    -satScore: int
+    -actScore: int
+    -greCombined: int
+    -greVerbal: int
+    -greQuant: int
+    -greWriting: float
+    -graduationYear: int
+    -currentSchool: String
+    -currentDegree: DegreeLevel
+    --
+    +updateAcademicInfo(): void
+    +getRecommendations(): List<Recommendation>
+    +getApplications(): List<Application>
+    +calculateMatchScore(School): float
+    +recordInterests(List<Interest>): void
+  }
+  
+  class Expert {
+    -id: int
+    -institution: String
+    -expertiseArea: String
+    -title: String
+    -bio: String
+    -yearsOfExperience: int
+    -ratingAvg: float
+    -reviewCount: int
+    -isVerified: boolean
+    -verifiedAt: DateTime
+    --
+    +reviewEssay(Essay): EssayFeedback
+    +reviewApplication(Application): String
+    +provideSchoolInsights(School): SchoolPreference
+    +getRating(): float
+    +getCompletedReviews(): List<ExpertReview>
+  }
+  
+  class Admin {
+    -id: int
+    -adminLevel: int
+    -department: String
+    -permissions: List<Permission>
+    --
+    +manageUsers(): void
+    +approveExpert(Expert): void
+    +manageSchoolData(): void
+    +viewSystemMetrics(): Map<String, Object>
+    +configureSystem(String, String): void
+    +auditUserActivity(): List<Activity>
+  }
+  
+  class UserRole {
+    -user_id: int
+    -student_id: int
+    -expert_id: int
+    -admin_id: int
+    -primaryRole: RoleType
+    --
+    +getPrimaryRole(): RoleType
+    +hasRole(RoleType): boolean
+    +assignRole(RoleType): void
+    +removeRole(RoleType): void
+  }
+  
+  enum UserStatus {
+    ACTIVE
+    INACTIVE
+    SUSPENDED
+    PENDING_VERIFICATION
+  }
+  
+  enum RoleType {
+    STUDENT
+    EXPERT
+    ADMIN
+  }
+  
+  enum DegreeLevel {
+    HIGH_SCHOOL
+    BACHELOR
+    MASTER
+    PHD
+  }
+}
+
+package "申请相关" {
+  class School {
+    -id: int
+    -name: String
+    -location: String
+    -country: String
+    -ranking: int
+    -acceptanceRate: float
+    -avgSAT: int
+    -avgACT: int
+    -avgGPA: float
+    -website: String
+    -description: String
+    -logoUrl: String
+    -foundedYear: int
+    -studentCount: int
+    -internationalPercentage: float
+    -isIvyLeague: boolean
+    --
+    +getPrograms(): List<SchoolProgram>
+    +getRequirements(): List<EssayRequirement>
+    +getApplicationStats(): List<ApplicationStatistic>
+    +getPreference(): SchoolPreference
+    +calculateFitScore(Student): float
+  }
+  
+  class Application {
+    -id: int
+    -status: ApplicationStatus
+    -appYear: int
+    -term: Term
+    -personalStatement: String
+    -submissionDate: Date
+    -decisionDate: Date
+    -applicationType: ApplicationType
+    -interviewDate: Date
+    -interviewNotes: String
+    -depositPaid: boolean
+    -depositAmount: decimal
+    -depositDate: Date
+    -user_id: int
+    -school_id: int
+    -program_id: int
+    --
+    +submit(): void
+    +withdraw(): void
+    +updateStatus(ApplicationStatus): void
+    +addEssay(Essay): void
+    +addDocument(Document): void
+    +scheduleInterview(Date): void
+    +recordDecision(ApplicationStatus): void
+    +getTimelineEvents(): List<TimelineEvent>
+  }
+  
+  class Essay {
+    -id: int
+    -title: String
+    -content: String
+    -optimizedContent: String
+    -status: EssayStatus
+    -essayType: EssayType
+    -wordCount: int
+    -wordLimit: int
+    -lastEditedAt: DateTime
+    -version: int
+    -user_id: int
+    -app_id: int
+    -requirement_id: int
+    --
+    +generateDraft(String): void
+    +optimize(): void
+    +getFeedback(): List<EssayFeedback>
+    +saveVersion(): void
+    +revertToVersion(int): void
+    +calculateWordCount(): int
+    +checkPlagiarism(): float
+    +exportToPDF(): byte[]
+  }
+  
+  class EssayRequirement {
+    -id: int
+    -title: String
+    -prompt: String
+    -essayType: EssayType
+    -minWordCount: int
+    -maxWordCount: int
+    -isRequired: boolean
+    -deadline: Date
+    -tips: String
+    -sampleCount: int
+    -school_id: int
+    -program_id: int
+    --
+    +getSamples(): List<Essay>
+    +isWithinWordLimit(Essay): boolean
+    +getSchool(): School
+    +getProgram(): SchoolProgram
+    +generatePromptSuggestion(): String
+  }
+  
+  class SchoolProgram {
+    -id: int
+    -school_id: int
+    -name: String
+    -department: String
+    -degreeLevel: DegreeLevel
+    -duration: int
+    -tuitionFee: decimal
+    -scholarshipAvailable: boolean
+    -admissionRequirements: String
+    -keywords: List<String>
+    --
+    +getSchool(): School
+    +getRequirements(): List<EssayRequirement>
+    +matchesKeywords(List<String>): boolean
+    +getSuccessRate(): float
+    +calculateROI(): float
+  }
+  
+  class SchoolPreference {
+    -id: int
+    -school_id: int
+    -focusGPA: int
+    -focusResearch: int
+    -focusInternship: int
+    -focusVolunteering: int
+    -focusLeadership: int
+    -diversityEmphasis: int
+    -note: String
+    -source: PreferenceSource
+    --
+    +getWeightedScore(Student): float
+    +getPreferenceProfile(): Map<String, Integer>
+    +getSchool(): School
+    +updateFromData(Map<String, Object>): void
+  }
+  
+  class Document {
+    -id: int
+    -name: String
+    -fileType: String
+    -fileSize: int
+    -filePath: String
+    -uploadedAt: DateTime
+    -status: DocumentStatus
+    -documentType: DocumentType
+    -user_id: int
+    -app_id: int
+    --
+    +upload(byte[]): void
+    +download(): byte[]
+    +verify(): boolean
+    +getApplication(): Application
+    +getUser(): User
+    +updateStatus(DocumentStatus): void
+  }
+  
+  class TimelineEvent {
+    -id: int
+    -app_id: int
+    -eventType: EventType
+    -eventDate: DateTime
+    -description: String
+    --
+    +getApplication(): Application
+    +formatEventDate(): String
+    +isComplete(): boolean
+  }
+  
+  enum ApplicationStatus {
+    DRAFT
+    IN_PROGRESS
+    SUBMITTED
+    UNDER_REVIEW
+    ACCEPTED
+    REJECTED
+    WAITLISTED
+    DEFERRED
+  }
+  
+  enum Term {
+    FALL
+    SPRING
+    SUMMER
+  }
+  
+  enum ApplicationType {
+    EARLY_DECISION
+    EARLY_ACTION
+    REGULAR
+    ROLLING
+  }
+  
+  enum EssayStatus {
+    DRAFT
+    IN_PROGRESS
+    OPTIMIZING
+    OPTIMIZED
+    SUBMITTED
+  }
+  
+  enum EssayType {
+    PERSONAL_STATEMENT
+    STATEMENT_OF_PURPOSE
+    WHY_SCHOOL
+    DIVERSITY
+    EXTRACURRICULAR
+    CHALLENGE
+    LEADERSHIP
+  }
+  
+  enum DocumentStatus {
+    PENDING
+    APPROVED
+    REJECTED
+  }
+  
+  enum DocumentType {
+    TRANSCRIPT
+    RECOMMENDATION
+    CERTIFICATE
+    RESUME
+    FINANCIAL
+    OTHER
+  }
+  
+  enum EventType {
+    STARTED
+    ESSAY_SUBMITTED
+    DOCS_UPLOADED
+    SUBMITTED
+    INTERVIEW_SCHEDULED
+    DECISION_RECEIVED
+  }
+  
+  enum PreferenceSource {
+    EXPERT
+    DATA_ANALYSIS
+    OFFICIAL
+  }
+}
+
+package "反馈与评价" {
+  class ExpertReview {
+    -id: int
+    -expert_id: int
+    -targetType: ReviewTargetType
+    -targetId: int
+    -rating: int
+    -comment: String
+    -approved: boolean
+    -reviewedAt: DateTime
+    -visibilityLevel: VisibilityLevel
+    --
+    +getExpert(): Expert
+    +getTarget(): Object
+    +isVisible(User): boolean
+    +approve(): void
+    +reject(): void
+    +updateComment(String): void
+  }
+  
+  class EssayFeedback {
+    -id: int
+    -essay_id: int
+    -source: FeedbackSource
+    -sourceId: int
+    -feedbackType: FeedbackType
+    -comment: String
+    -suggestionText: String
+    -startPosition: int
+    -endPosition: int
+    -createdAt: DateTime
+    -isResolved: boolean
+    --
+    +getEssay(): Essay
+    +getSource(): Object
+    +applyFeedback(): void
+    +markResolved(): void
+    +getTextContext(): String
+    +getAIAnalysis(): String
+  }
+  
+  class UserRating {
+    -id: int
+    -rater_id: int
+    -rated_id: int
+    -targetType: RatingTargetType
+    -ratingValue: float
+    -comment: String
+    -createdAt: DateTime
+    --
+    +getRater(): User
+    +getRated(): Object
+    +updateRating(float): void
+    +isAnonymous(): boolean
+    +getRatingMetrics(): Map<String, Float>
+  }
+  
+  enum ReviewTargetType {
+    SCHOOL
+    ESSAY
+    REQUIREMENT
+  }
+  
+  enum VisibilityLevel {
+    PRIVATE
+    STUDENT
+    PUBLIC
+  }
+  
+  enum FeedbackSource {
+    STUDENT
+    EXPERT
+    SYSTEM
+  }
+  
+  enum FeedbackType {
+    GRAMMAR
+    STRUCTURE
+    CONTENT
+    STYLE
+  }
+  
+  enum RatingTargetType {
+    EXPERT
+    SERVICE
+  }
+}
+
+package "智能推荐" {
+  class Recommendation {
+    -id: int
+    -student_id: int
+    -createdAt: DateTime
+    -modelVersion: String
+    -inputSummary: String
+    -recommendationType: RecommendationType
+    -ai_model_id: int
+    --
+    +getStudent(): Student
+    +getItems(): List<RecommendationItem>
+    +getAIModel(): AIModel
+    +generateExplanation(): String
+    +exportToFormat(String): byte[]
+    +applyFeedback(String): void
+  }
+  
+  class RecommendationItem {
+    -id: int
+    -recommendation_id: int
+    -school_id: int
+    -program_id: int
+    -matchScore: float
+    -rank: int
+    -matchReason: String
+    -feedback: String
+    -isApplied: boolean
+    --
+    +getRecommendation(): Recommendation
+    +getSchool(): School
+    +getProgram(): SchoolProgram
+    +markAsApplied(): void
+    +provideFeedback(String): void
+    +compareWithOtherSchools(): List<SchoolComparison>
+  }
+  
+  class EssayGeneration {
+    -id: int
+    -essay_id: int
+    -generatedBy: GenerationSource
+    -version: int
+    -prompt: String
+    -generatedContent: String
+    -createdAt: DateTime
+    -ai_model_id: int
+    -generationDuration: int
+    -tokenCount: int
+    --
+    +getEssay(): Essay
+    +getAIModel(): AIModel
+    +saveToEssay(): void
+    +regenerate(): String
+    +analyzeQuality(): Map<String, Float>
+    +getTextStatistics(): TextStatistics
+  }
+  
+  class AIModel {
+    -id: int
+    -name: String
+    -modelType: AIModelType
+    -provider: String
+    -version: String
+    -configuration: Map<String, Object>
+    -performanceMetrics: Map<String, Float>
+    -description: String
+    -trainingDataSources: List<String>
+    -createdAt: DateTime
+    -lastUsedAt: DateTime
+    -isActive: boolean
+    --
+    +generateText(String): String
+    +generateRecommendation(Student): Recommendation
+    +evaluateEssay(Essay): EssayFeedback
+    +getPerformanceMetrics(): Map<String, Float>
+    +updateConfiguration(Map<String, Object>): void
+    +testAccuracy(): float
+  }
+  
+  class StudentInterest {
+    -id: int
+    -student_id: int
+    -interestType: InterestType
+    -interestValue: String
+    -weight: float
+    --
+    +getStudent(): Student
+    +updateWeight(float): void
+    +matchesProgram(SchoolProgram): boolean
+    +getRelatedInterests(): List<StudentInterest>
+  }
+  
+  class TextStatistics {
+    -wordCount: int
+    -sentenceCount: int
+    -avgWordLength: float
+    -avgSentenceLength: float
+    -readabilityScore: float
+    -topicDensity: Map<String, Float>
+    --
+    +analyzeText(String): void
+    +getStatisticsReport(): String
+    +getReadabilityLevel(): String
+    +getMainTopics(): List<String>
+    +compareWith(TextStatistics): TextComparison
+  }
+  
+  enum RecommendationType {
+    SCHOOL
+    PROGRAM
+    ESSAY_STYLE
+  }
+  
+  enum GenerationSource {
+    SYSTEM
+    EXPERT
+    STUDENT
+  }
+  
+  enum AIModelType {
+    TEXT_GENERATION
+    RECOMMENDATION
+    EVALUATION
+  }
+  
+  enum InterestType {
+    MAJOR
+    LOCATION
+    SCHOOL_TYPE
+    CAREER
+  }
+}
+
+package "社区交流" {
+  class ForumPost {
+    -id: int
+    -user_id: int
+    -title: String
+    -content: String
+    -postType: PostType
+    -tags: List<String>
+    -viewCount: int
+    -likeCount: int
+    -isAnonymous: boolean
+    -isPinned: boolean
+    -createdAt: DateTime
+    -updatedAt: DateTime
+    --
+    +getAuthor(): User
+    +getComments(): List<Comment>
+    +addComment(Comment): void
+    +like(): void
+    +pin(): void
+    +markAsHelpful(): void
+    +getRelatedPosts(): List<ForumPost>
+  }
+  
+  class Comment {
+    -id: int
+    -post_id: int
+    -user_id: int
+    -parent_id: int
+    -content: String
+    -likeCount: int
+    -isAnonymous: boolean
+    -isExpertResponse: boolean
+    -createdAt: DateTime
+    -updatedAt: DateTime
+    --
+    +getAuthor(): User
+    +getPost(): ForumPost
+    +getParentComment(): Comment
+    +getReplies(): List<Comment>
+    +like(): void
+    +edit(String): void
+    +markAsExpertResponse(): void
+  }
+  
+  class UserNotification {
+    -id: int
+    -user_id: int
+    -title: String
+    -content: String
+    -notificationType: NotificationType
+    -relatedEntityType: String
+    -relatedEntityId: int
+    -isRead: boolean
+    -createdAt: DateTime
+    -readAt: DateTime
+    --
+    +getUser(): User
+    +getRelatedEntity(): Object
+    +markAsRead(): void
+    +dismiss(): void
+    +sendEmail(): void
+    +sendPushNotification(): void
+  }
+  
+  class Message {
+    -id: int
+    -sender_id: int
+    -receiver_id: int
+    -content: String
+    -isRead: boolean
+    -createdAt: DateTime
+    -readAt: DateTime
+    --
+    +getSender(): User
+    +getReceiver(): User
+    +markAsRead(): void
+    +reply(String): Message
+    +isSystemMessage(): boolean
+    +containsAttachment(): boolean
+  }
+  
+  enum PostType {
+    QUESTION
+    EXPERIENCE
+    NEWS
+    DISCUSSION
+  }
+  
+  enum NotificationType {
+    SYSTEM
+    APPLICATION
+    ESSAY
+    FORUM
+    MESSAGE
+  }
+}
+
+package "统计分析" {
+  class ApplicationStatistic {
+    -id: int
+    -school_id: int
+    -year: int
+    -term: String
+    -totalApplicants: int
+    -acceptedCount: int
+    -rejectedCount: int
+    -waitlistedCount: int
+    -avgGPA: float
+    -avgSAT: int
+    -avgTOEFL: int
+    -internationalPercentage: float
+    --
+    +getSchool(): School
+    +getAcceptanceRate(): float
+    +getTrends(): StatisticTrend
+    +compareWithPreviousYear(): YearComparison
+    +generateReport(): Map<String, Object>
+  }
+  
+  class UserActivity {
+    -id: int
+    -user_id: int
+    -activityType: ActivityType
+    -description: String
+    -ipAddress: String
+    -userAgent: String
+    -createdAt: DateTime
+    --
+    +getUser(): User
+    +isAnomalous(): boolean
+    +formatForAudit(): String
+    +getSessionId(): String
+    +getDeviceInfo(): Map<String, String>
+  }
+  
+  class SystemMetric {
+    -id: int
+    -metricType: MetricType
+    -count: int
+    -averageDuration: float
+    -successRate: float
+    -date: Date
+    --
+    +compareWithBaseline(): float
+    +getMonthlyAverage(): float
+    +graphData(): List<DataPoint>
+    +alertThresholdExceeded(): boolean
+    +formatForDashboard(): Map<String, Object>
+  }
+  
+  class StatisticTrend {
+    -timePoints: List<String>
+    -values: List<Float>
+    -growthRate: float
+    -seasonalPattern: boolean
+    --
+    +getGrowthTrend(): String
+    +predict(String): float
+    +getVisualizationData(): Map<String, Object>
+    +detectAnomaly(): List<Anomaly>
+  }
+  
+  class YearComparison {
+    -metric: String
+    -currentValue: float
+    -previousValue: float
+    -percentChange: float
+    -isSignificant: boolean
+    --
+    +getFormattedChange(): String
+    +getChangeDirection(): String
+    +getSignificanceExplanation(): String
+  }
+  
+  enum ActivityType {
+    LOGIN
+    ESSAY_EDIT
+    RECOMMENDATION
+    APPLICATION
+    FORUM
+  }
+  
+  enum MetricType {
+    ESSAY_GENERATION
+    RECOMMENDATION
+    USER_REGISTRATION
+  }
+}
+
+package "系统管理" {
+  class Configuration {
+    -id: int
+    -configKey: String
+    -configValue: String
+    -configType: ConfigType
+    -description: String
+    -lastUpdatedBy: int
+    -updatedAt: DateTime
+    --
+    +getValue(): Object
+    +setValue(Object): void
+    +getUpdatedBy(): Admin
+    +validateValue(): boolean
+    +restoreDefault(): void
+    +getHistory(): List<ConfigChange>
+  }
+  
+  class Subscription {
+    -id: int
+    -user_id: int
+    -planType: PlanType
+    -startDate: Date
+    -endDate: Date
+    -paymentStatus: PaymentStatus
+    -paymentAmount: decimal
+    -renewalDate: Date
+    --
+    +getUser(): User
+    +isActive(): boolean
+    +getDaysRemaining(): int
+    +renew(): boolean
+    +upgrade(PlanType): void
+    +cancel(): void
+    +generateInvoice(): Invoice
+  }
+  
+  class AuditLog {
+    -id: int
+    -user_id: int
+    -action: String
+    -entityType: String
+    -entityId: int
+    -oldValue: String
+    -newValue: String
+    -ipAddress: String
+    -userAgent: String
+    -createdAt: DateTime
+    --
+    +getUser(): User
+    +formatForDisplay(): String
+    +isWarningLevel(): boolean
+    +relatedLogs(): List<AuditLog>
+    +getChange(): Map<String, Change>
+  }
+  
+  class Invoice {
+    -id: int
+    -user_id: int
+    -subscription_id: int
+    -amount: decimal
+    -status: InvoiceStatus
+    -dueDate: Date
+    -paidDate: Date
+    -currency: String
+    --
+    +getUser(): User
+    +getSubscription(): Subscription
+    +markAsPaid(): void
+    +generatePDF(): byte[]
+    +sendToUser(): void
+  }
+  
+  enum ConfigType {
+    SYSTEM
+    SERVICE
+    UI
+  }
+  
+  enum PlanType {
+    FREE
+    BASIC
+    PREMIUM
+    ENTERPRISE
+  }
+  
+  enum PaymentStatus {
+    PENDING
+    ACTIVE
+    CANCELLED
+    EXPIRED
+  }
+  
+  enum InvoiceStatus {
+    PENDING
+    PAID
+    OVERDUE
+    CANCELLED
+  }
+}
+
+' 关系定义
+User <|-- Student
+User <|-- Expert
+User <|-- Admin
+User "1" -- "1" UserRole
+
+School "1" *-- "many" SchoolProgram
+School "1" *-- "many" EssayRequirement
+School "1" -- "0..1" SchoolPreference
+
+User "1" -- "many" Application
+School "1" -- "many" Application
+SchoolProgram "1" -- "many" Application
+Application "1" *-- "many" Essay
+Application "1" *-- "many" Document
+Application "1" *-- "many" TimelineEvent
+
+Essay "1" -- "many" EssayFeedback
+Essay "1" -- "many" EssayGeneration
+Essay "many" -- "1" EssayRequirement
+
+Expert "1" -- "many" ExpertReview
+Expert "1" -- "many" UserRating
+
+Student "1" -- "many" Recommendation
+Student "1" -- "many" StudentInterest
+Recommendation "1" *-- "many" RecommendationItem
+RecommendationItem "many" -- "1" School
+RecommendationItem "many" -- "0..1" SchoolProgram
+
+AIModel "1" -- "many" Recommendation
+AIModel "1" -- "many" EssayGeneration
+
+User "1" -- "many" ForumPost
+User "1" -- "many" Comment
+ForumPost "1" *-- "many" Comment
+Comment "0..1" *-- "many" Comment
+
+User "1" -- "many" UserNotification
+User "1" -- "many" Message
+User "1" -- "many" Subscription
+
+School "1" -- "many" ApplicationStatistic
+User "1" -- "many" UserActivity
+
+Admin "1" -- "many" Configuration
+Admin "1" -- "many" AuditLog
+Subscription "1" -- "many" Invoice
+
+@enduml 
