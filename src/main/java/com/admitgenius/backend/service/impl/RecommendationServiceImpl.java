@@ -37,22 +37,44 @@ public class RecommendationServiceImpl implements RecommendationService {
     @Override
     @Transactional
     public RecommendationResponseDTO generateRecommendation(RecommendationRequestDTO request) {
+        // 输入验证
+        if (request == null) {
+            throw new IllegalArgumentException("推荐请求不能为空");
+        }
+        if (request.getUserId() == null) {
+            throw new IllegalArgumentException("用户ID不能为空");
+        }
+        if (request.getCount() == null || request.getCount() <= 0) {
+            request.setCount(10); // 默认推荐10所学校
+        }
+        if (request.getRecommendationType() == null || request.getRecommendationType().trim().isEmpty()) {
+            request.setRecommendationType("ACADEMIC"); // 默认学术推荐
+        }
+        
+        // 1. 验证用户存在
         User user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new RuntimeException("用户不存在"));
         
-       
         // 2. 创建推荐记录
         Recommendation recommendation = new Recommendation();
         recommendation.setStudent(user);
         recommendation.setCreatedAt(LocalDateTime.now());
         recommendation.setInputSummary(generateInputSummary(request));
-        recommendation.setRecommendationType(
-                Recommendation.RecommendationType.valueOf(request.getRecommendationType()));
+        
+        try {
+            recommendation.setRecommendationType(
+                    Recommendation.RecommendationType.valueOf(request.getRecommendationType().toUpperCase()));
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("无效的推荐类型: " + request.getRecommendationType());
+        }
         
         recommendation = recommendationRepository.save(recommendation);
         
         // 3. 获取所有学校
         List<School> allSchools = schoolRepository.findAll();
+        if (allSchools.isEmpty()) {
+            throw new RuntimeException("系统中暂无学校数据，无法生成推荐");
+        }
         
         // 4. 计算匹配分数并排序
         List<SchoolMatchResult> matchResults = calculateMatchScores(allSchools, request);
@@ -73,7 +95,7 @@ public class RecommendationServiceImpl implements RecommendationService {
             item.setSchool(result.getSchool());
             
             // 如果需要匹配项目，查找最匹配的项目
-            if (request.getTargetMajor() != null && !request.getTargetMajor().isEmpty()) {
+            if (request.getTargetMajor() != null && !request.getTargetMajor().trim().isEmpty()) {
                 Optional<SchoolProgram> bestProgram = findBestProgram(result.getSchool(), request.getTargetMajor());
                 bestProgram.ifPresent(item::setProgram);
             }
@@ -101,7 +123,7 @@ public class RecommendationServiceImpl implements RecommendationService {
         response.setItems(itemDTOs);
         
         // 添加统计信息
-        if (itemDTOs.size() > 0) {
+        if (!itemDTOs.isEmpty()) {
             Map<String, Object> stats = generateStatistics(itemDTOs);
             response.setStatistics(stats);
         }
@@ -140,6 +162,8 @@ public class RecommendationServiceImpl implements RecommendationService {
         List<SchoolMatchResult> results = new ArrayList<>();
         
         for (School school : schools) {
+            if (school == null) continue; // 防止空学校对象
+            
             float score = 0.0f;
             List<String> reasons = new ArrayList<>();
             
@@ -222,7 +246,8 @@ public class RecommendationServiceImpl implements RecommendationService {
             score += testScore * 0.3f;
             
             // 地点偏好匹配 (权重：15%)
-            if (request.getLocationPreferences() != null && !request.getLocationPreferences().isEmpty()) {
+            if (request.getLocationPreferences() != null && !request.getLocationPreferences().isEmpty() 
+                    && school.getLocation() != null) {
                 float locationScore = calculateLocationScore(school.getLocation(), request.getLocationPreferences());
                 score += locationScore * 0.15f;
                 

@@ -78,14 +78,8 @@ public class UserService {
         }
         
         if (userDTO.getGmatScore() != null) {
-            // 处理 gmatScore（实际字段可能不同）
-            try {
-                user.getClass().getDeclaredField("gmatTotal"); // 检查字段是否存在
-                user.getClass().getDeclaredMethod("setGmatTotal", Integer.class)
-                    .invoke(user, userDTO.getGmatScore());
-            } catch (Exception e) {
-                System.out.println("设置 GMAT 分数时出错: " + e.getMessage());
-            }
+            // 直接设置GMAT分数字段
+            user.setGmatTotal(userDTO.getGmatScore());
         }
         
         if (userDTO.getToeflScore() != null) {
@@ -222,15 +216,8 @@ public class UserService {
         dto.setIeltsScore(user.getIeltsScore());
         dto.setTargetMajor(user.getTargetMajor());
         
-        // 获取 gmatScore（实际字段可能不同）
-        try {
-            Object gmatTotal = user.getClass().getDeclaredMethod("getGmatTotal").invoke(user);
-            if (gmatTotal != null) {
-                dto.setGmatScore((Integer) gmatTotal);
-            }
-        } catch (Exception e) {
-            System.out.println("获取 GMAT 分数时出错: " + e.getMessage());
-        }
+        // 直接获取GMAT分数
+        dto.setGmatScore(user.getGmatTotal());
         
         return dto;
     }
@@ -247,15 +234,9 @@ public class UserService {
         user.setIeltsScore(userDTO.getIeltsScore());
         user.setTargetMajor(userDTO.getTargetMajor());
         
-        // 设置 gmatScore（实际字段可能不同）
+        // 直接设置GMAT分数
         if (userDTO.getGmatScore() != null) {
-            try {
-                user.getClass().getDeclaredField("gmatTotal"); // 检查字段是否存在
-                user.getClass().getDeclaredMethod("setGmatTotal", Integer.class)
-                    .invoke(user, userDTO.getGmatScore());
-            } catch (Exception e) {
-                System.out.println("设置 GMAT 分数时出错: " + e.getMessage());
-            }
+            user.setGmatTotal(userDTO.getGmatScore());
         }
         
         try {

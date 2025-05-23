@@ -26,44 +26,51 @@ public class EssayService {
     
     //文书创建
     public EssayDTO createEssay(EssayDTO essayDTO) {
+        // 输入验证
+        if (essayDTO == null) {
+            throw new IllegalArgumentException("文书信息不能为空");
+        }
+        
         // 1. 校验userId非空并查询用户
         Long userId = essayDTO.getUserId();
         if (userId == null) {
-            throw new IllegalArgumentException("User ID cannot be null");
+            throw new IllegalArgumentException("用户ID不能为空");
         }
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+                .orElseThrow(() -> new ResourceNotFoundException("用户不存在，ID: " + userId));
 
-    
-
-
-
+        // 验证标题
+        if (essayDTO.getTitle() == null || essayDTO.getTitle().trim().isEmpty()) {
+            throw new IllegalArgumentException("文书标题不能为空");
+        }
+        
+        // 验证内容
+        if (essayDTO.getContent() == null || essayDTO.getContent().trim().isEmpty()) {
+            throw new IllegalArgumentException("文书内容不能为空");
+        }
 
         // 处理essayType
         String essayTypeStr = essayDTO.getEssayType();
-        if (essayTypeStr == null) {
-            throw new IllegalArgumentException("Essay type cannot be null");
+        if (essayTypeStr == null || essayTypeStr.trim().isEmpty()) {
+            throw new IllegalArgumentException("文书类型不能为空");
         }
         Essay.EssayType essayType;
         try {
-            essayType = Essay.EssayType.valueOf(essayTypeStr);
+            essayType = Essay.EssayType.valueOf(essayTypeStr.trim().toUpperCase());
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Invalid essay type: " + essayTypeStr);
+            throw new IllegalArgumentException("无效的文书类型: " + essayTypeStr);
         }
-
 
         // 4. 创建并填充Essay实体（仅处理非空字段）
         Essay essay = new Essay();
         essay.setUser(user);
-        essay.setTitle(essayDTO.getTitle());
-        essay.setEssayType(Essay.EssayType.valueOf(essayDTO.getEssayType()));
-        essay.setContent(essayDTO.getContent());
-        //essay.setVersion(0);
+        essay.setTitle(essayDTO.getTitle().trim());
+        essay.setEssayType(essayType);
+        essay.setContent(essayDTO.getContent().trim());
         essay.setGeneratedBy(Essay.GenerationSource.STUDENT);       
         essay.setCreatedAt(LocalDateTime.now());
         essay.setUpdatedAt(LocalDateTime.now());
 
-        
         // 5. 保存并转换为DTO
         Essay savedEssay = essayRepository.save(essay);
         return convertToDTO(savedEssay);

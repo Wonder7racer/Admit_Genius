@@ -54,13 +54,25 @@ public class ForumServiceImpl implements ForumService {
         User author = userRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException("用户不存在，ID: " + userId));
 
+        // 权限检查
         if (UserRole.SCHOOL_ASSISTANT.equals(author.getRole())) {
             throw new AccessDeniedException("择校助手无权创建帖子");
         }
 
+        // 输入验证
+        if (postDTO == null) {
+            throw new IllegalArgumentException("帖子信息不能为空");
+        }
+        if (postDTO.getTitle() == null || postDTO.getTitle().trim().isEmpty()) {
+            throw new IllegalArgumentException("帖子标题不能为空");
+        }
+        if (postDTO.getContent() == null || postDTO.getContent().trim().isEmpty()) {
+            throw new IllegalArgumentException("帖子内容不能为空");
+        }
+
         ForumPost post = new ForumPost();
-        post.setTitle(postDTO.getTitle());
-        post.setContent(postDTO.getContent());
+        post.setTitle(postDTO.getTitle().trim());
+        post.setContent(postDTO.getContent().trim());
         post.setAuthor(author);
         post.setCreatedAt(LocalDateTime.now());
         post.setUpdatedAt(LocalDateTime.now());
@@ -134,15 +146,27 @@ public class ForumServiceImpl implements ForumService {
         User requestingUser = userRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException("用户不存在，ID: " + userId));
 
+        // 权限检查：择校助手不能修改帖子
         if (UserRole.SCHOOL_ASSISTANT.equals(requestingUser.getRole())) {
             throw new AccessDeniedException("择校助手无权修改帖子");
         }
-        if (!post.getAuthor().getId().equals(requestingUser.getId())) {
-            throw new AccessDeniedException("用户无权修改此帖子"); 
+        
+        // 权限检查：只有作者自己或管理员可以修改帖子
+        if (!post.getAuthor().getId().equals(requestingUser.getId()) && 
+            !UserRole.ADMIN.equals(requestingUser.getRole())) {
+            throw new AccessDeniedException("只有帖子作者或管理员可以修改此帖子"); 
         }
 
-        post.setTitle(postDTO.getTitle());
-        post.setContent(postDTO.getContent());
+        // 输入验证
+        if (postDTO.getTitle() == null || postDTO.getTitle().trim().isEmpty()) {
+            throw new IllegalArgumentException("帖子标题不能为空");
+        }
+        if (postDTO.getContent() == null || postDTO.getContent().trim().isEmpty()) {
+            throw new IllegalArgumentException("帖子内容不能为空");
+        }
+
+        post.setTitle(postDTO.getTitle().trim());
+        post.setContent(postDTO.getContent().trim());
         post.setUpdatedAt(LocalDateTime.now());
 
         ForumPost updatedPost = forumRepository.save(post);

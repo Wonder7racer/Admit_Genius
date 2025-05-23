@@ -152,46 +152,52 @@ public class EssayPolishService {
      * 调用OpenAI API
      */
     private String callOpenAIApi(String prompt) {
-        openaiApiKey = openaiConfig.getApi().getKey();
-        openaiApiUrl = openaiConfig.getApi().getProxyUrl()+ "/chat/completions"; 
-
-
-        RestTemplate restTemplate = new RestTemplate();
-        
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.setBearerAuth(openaiApiKey);
-        
-        Map<String, Object> message = new HashMap<>();
-        message.put("role", "user");
-        message.put("content", prompt);
-        
-        Map<String, Object> requestBody = new HashMap<>();
-        requestBody.put("model", openaiModel);
-        requestBody.put("messages", new Object[]{message});
-        requestBody.put("temperature", 0.7);
-        requestBody.put("max_tokens", 4000);
-        
-        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
-        
         try {
+            openaiApiKey = openaiConfig.getApi().getKey();
+            openaiApiUrl = openaiConfig.getApi().getProxyUrl() + "/chat/completions";
+            
+            if (openaiApiKey == null || openaiApiKey.trim().isEmpty()) {
+                throw new RuntimeException("OpenAI API密钥未配置");
+            }
+
+            RestTemplate restTemplate = new RestTemplate();
+            
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.setBearerAuth(openaiApiKey);
+            
+            Map<String, Object> message = new HashMap<>();
+            message.put("role", "user");
+            message.put("content", prompt);
+            
+            Map<String, Object> requestBody = new HashMap<>();
+            requestBody.put("model", openaiModel);
+            requestBody.put("messages", new Object[]{message});
+            requestBody.put("temperature", 0.7);
+            requestBody.put("max_tokens", 4000);
+            
+            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
+            
             ResponseEntity<Map> response = restTemplate.postForEntity(openaiApiUrl, entity, Map.class);
             
             if (response.getStatusCode() == HttpStatus.OK) {
                 Map<String, Object> responseBody = response.getBody();
                 if (responseBody != null && responseBody.containsKey("choices")) {
-                                        List<Object> choicesList = (List<Object>) responseBody.get("choices"); // 先转换为List
-                    Object[] choices = choicesList.toArray(new Object[0]); // 安全转换为数组
-                    if (choices.length > 0) {
-                        Map<String, Object> choice = (Map<String, Object>) choices[0];
+                    List<Object> choicesList = (List<Object>) responseBody.get("choices");
+                    if (choicesList != null && !choicesList.isEmpty()) {
+                        Map<String, Object> choice = (Map<String, Object>) choicesList.get(0);
                         Map<String, Object> messageResponse = (Map<String, Object>) choice.get("message");
                         return (String) messageResponse.get("content");
                     }
                 }
+                throw new RuntimeException("OpenAI API响应格式异常");
             }
             
             throw new RuntimeException("调用OpenAI API失败: " + response.getStatusCode());
+            
         } catch (Exception e) {
+            System.err.println("调用OpenAI API出错: " + e.getMessage());
+            e.printStackTrace();
             throw new RuntimeException("调用OpenAI API出错: " + e.getMessage(), e);
         }
     }
