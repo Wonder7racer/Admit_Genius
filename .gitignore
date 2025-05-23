@@ -32,6 +32,74 @@ build/
 ### VS Code ###
 .vscode/
 
-# Application specific properties
+# Application specific properties - 敏感配置文件
 /src/main/resources/application.properties
+/src/main/resources/application-dev.properties
+/src/main/resources/application-local.properties
 /src/main/resources/openai.properties
+
+# 环境变量文件
+.env
+.env.local
+.env.dev
+.env.prod
+*.env
+
+# 密钥和证书文件
+*.key
+*.pem
+*.p12
+*.jks
+*.keystore
+
+# 日志文件
+*.log
+logs/
+log/
+
+# 运行时文件
+app.pid
+*.pid
+
+# 数据库文件
+*.db
+*.sqlite
+*.sqlite3
+
+# 备份文件
+*.bak
+*.backup
+*.tmp
+*~
+
+# OS specific files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# 临时文件
+temp/
+tmp/
+*.temp
+
+# Maven wrapper jar (security consideration)
+.mvn/wrapper/maven-wrapper.jar
+
+# 编译后的文件
+*.class
+*.jar
+*.war
+*.ear
+*.aar
+
+# 测试覆盖率报告
+coverage/
+.nyc_output/
+
+# 文档生成文件
+/docs/build/
+/docs/.vuepress/dist/

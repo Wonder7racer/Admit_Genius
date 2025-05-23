@@ -12,7 +12,7 @@ import org.springframework.context.annotation.PropertySource;
 @PropertySource("classpath:openai.properties")  // 指定自定义配置文件
 @ConfigurationProperties(prefix = "openai")  // 属性前缀
 public class OpenAIConfig {
-    private ApiConfig api;      // 对应 openai.api.key
+    private ApiConfig api = new ApiConfig();
     private String proxyUrl;    // 对应 openai.proxy.url
 
     @Getter @Setter

@@ -2,328 +2,181 @@
 
 ## 1. 项目概述
 
-本文档概述了 AdmitGenius 后端代码库，包括其结构、核心功能和 REST API 端点。后端使用 Java 和 Spring Boot 框架构建。
+AdmitGenius 是一个智能留学申请助手系统的后端服务，使用Java Spring Boot框架构建。该系统提供用户管理、AI文书生成与润色、学校推荐、论坛交流等核心功能，帮助用户完成留学申请流程。
 
-## 2. 项目结构
+## 2. 技术栈
 
-项目遵循标准的 Maven 和 Spring Boot 项目结构：
+- **框架**: Spring Boot 3.4.3
+- **Java版本**: 17
+- **数据库**: MySQL (支持PostgreSQL)
+- **安全认证**: Spring Security + JWT
+- **ORM**: Spring Data JPA + Hibernate
+- **AI集成**: OpenAI GPT API
+- **构建工具**: Maven
+- **其他依赖**: Lombok, Validation, DevTools
 
+## 3. 核心功能模块
+
+### 3.1 用户管理系统
+- 用户注册、登录
+- JWT令牌认证
+- 用户信息管理
+- 角色权限控制
+
+### 3.2 AI文书系统
+- **文书生成**: 基于用户背景信息和学校要求生成个性化文书
+- **文书润色**: 对现有文书进行语法、结构、风格优化
+- **文书管理**: 文书的创建、编辑、删除、查询
+
+### 3.3 智能推荐系统
+- 基于用户背景的学校推荐
+- 支持多维度匹配算法
+- 推荐反馈收集与分析
+
+### 3.4 论坛交流系统
+- 帖子发布与浏览
+- 评论互动
+- 点赞功能
+- 分页查询支持
+
+### 3.5 管理员系统
+- 学校数据管理
+- 用户管理
+- 系统配置
+
+## 4. API 端点详情
+
+### 4.1 认证相关 (`/api/auth`)
+
+#### 4.1.1 用户登录
 ```
-.
-├── pom.xml                   # Maven 构建配置文件
-├── mvnw                      # Maven 包装器脚本 (Linux/macOS)
-├── mvnw.cmd                  # Maven 包装器脚本 (Windows)
-├── src
-│   ├── main
-│   │   ├── java
-│   │   │   └── com
-│   │   │       └── admitgenius
-│   │   │           └── backend
-│   │   │               ├── AdmitGeniusBackEndApplication.java  # Spring Boot 应用入口点
-│   │   │               ├── config        # 应用配置 (安全, Web 等)
-│   │   │               ├── controller    # REST API 控制器
-│   │   │               ├── dto           # 数据传输对象
-│   │   │               ├── exception     # 自定义异常处理
-│   │   │               ├── model         # 数据模型 / 实体
-│   │   │               ├── payload       # 请求/响应负载结构
-│   │   │               ├── repository    # 数据访问对象 (仓库)
-│   │   │               ├── security      # 安全配置和组件
-│   │   │               └── service       # 业务逻辑服务
-│   │   └── resources
-│   │       ├── application.properties    # 应用配置属性文件
-│   │       └── ...                     # 其他资源 (例如静态文件, 模板)
-│   └── test                    # 单元测试和集成测试
-├── target/                     # 构建输出目录
-├── .gitignore                # Git 忽略规则
-├── README.md                 # 项目 README (如果存在)
-└── doc.md                    # 本文档文件
+POST /api/auth/signin
 ```
 
-## 3. 核心功能
+**请求体结构:**
+```json
+{
+  "email": "用户邮箱",
+  "password": "用户密码"
+}
+```
 
+**响应:**
+```json
+{
+  "accessToken": "JWT令牌",
+  "tokenType": "Bearer",
+  "user": {
+    "id": 1,
+    "fullName": "用户姓名",
+    "email": "用户邮箱",
+    "role": "USER"
+  }
+}
+```
 
-*   **用户管理:** 用户注册、登录、信息获取和更新 (`UserController`, `AuthController`)。
-*   **文书管理:**
-    *   生成: 根据要求创建文书 (`EssayGenerationController`)。
-    *   存储与检索: 保存、获取用户文书 (`EssayController`)。
-    *   优化/润色: 改进现有文书 (`EssayController`, `EssayPolishController`)，可能涉及建议功能。
-*   **学校推荐:** 为用户生成学校推荐（可能基于用户资料或偏好），并收集反馈 (`RecommendationController`)。包括检索学校信息。
-*   **论坛:** 发布主题、查看帖子、添加评论和点赞帖子 (`ForumController`)。
-*   **管理员操作:** 管理用户和学校数据 (`AdminController`)。
-*   **认证与授权:** 保护 API 端点 (`AuthController`, `security/`)。
+#### 4.1.2 用户注册
+```
+POST /api/auth/signup
+```
 
-## 4. REST API 端点
-
-
-### 4.1 认证 (`/api/auth`)
-
-*   `POST /api/auth/signin`: 用户登录。
-*   `POST /api/auth/signup`: 用户注册。
-
-### 4.2 用户 (`/api/users`)
-
-*   `POST /api/users/register`: (可能与 `/api/auth/signup` 重复?) 用户注册。
-*   `POST /api/users/login`: (可能与 `/api/auth/signin` 重复?) 用户登录。
-*   `GET /api/users/{id}`: 根据 ID 获取用户详情。
-*   `PUT /api/users/{id}`: 根据 ID 更新用户详情。
-
-### 4.3 文书 (`/api/essays`)
-
-*   `POST /api/essays`: 创建新文书。
-*   `GET /api/essays/user/{userId}`: 获取特定用户的所有文书。
-*   `GET /api/essays/{id}`: 根据 ID 获取特定文书。
-*   `POST /api/essays/{id}/optimize`: 优化特定文书。
-
-### 4.4 文书生成 (`/api/essays/generation`)
-
-*   `POST /api/essays/generation`: 生成新文书。
-*   `GET /api/essays/generation/requirements`: 获取文书生成要求 (?)。
-
-### 4.5 文书润色 (`/api/essays/polish`)
-
-*   `POST /api/essays/polish`: 润色文书 (请求体中需要包含细节)。
-*   `POST /api/essays/polish/{essayId}`: 根据 ID 润色特定文书。
-*   `GET /api/essays/polish/suggestions/{essayId}`: 获取特定文书的润色建议。
-
-### 4.6 推荐 (`/api/recommendations`)
-
-*   `POST /api/recommendations/generate`: 生成推荐 (请求体中可能需要用户信息/偏好)。
-*   `GET /api/recommendations/user/{userId}`: 获取特定用户的推荐。
-*   `POST /api/recommendations/feedback/{itemId}`: 提交对推荐项目的反馈。
-*   `GET /api/recommendations/simple/{userId}`: 获取用户的简化推荐 (?)。
-*   `GET /api/recommendations/schools`: 获取所有学校的列表。
-*   `GET /api/recommendations/schools/{id}`: 根据 ID 获取特定学校的详情。
-
-### 4.7 论坛 (`/api/forum`)
-
-*   `GET /api/forum/posts`: 获取论坛帖子列表。
-*   `POST /api/forum/posts`: 创建新的论坛帖子。
-*   `GET /api/forum/posts/{id}`: 根据 ID 获取特定论坛帖子。
-*   `POST /api/forum/posts/{id}/comments`: 为特定帖子添加评论。
-*   `POST /api/forum/posts/{id}/like`: 点赞特定帖子。
-
-### 4.8 管理员 (`/api/admin`)
-
-*   `GET /api/admin/users`: 获取所有用户列表 (需要管理员权限)。
-*   `POST /api/admin/schools`: 添加新学校 (需要管理员权限)。
-*   `PUT /api/admin/schools/{id}`: 根据 ID 更新学校信息 (需要管理员权限)。
-*   `DELETE /api/admin/schools/{id}`: 根据 ID 删除学校 (需要管理员权限)。
-
-
-
-## 5. API 请求/响应结构
-
-以下是各个 API 端点的请求体结构和示例内容：
-
-### 5.1 认证 API
-
-#### 5.1.1 用户注册 (`POST /api/auth/signup`)
-
-请求体结构：
+**请求体结构:**
 ```json
 {
   "name": "用户姓名",
   "email": "用户邮箱",
-  "password": "用户密码"
-}
-```
-
-示例：
-```json
-{
-  "name": "张三",
-  "email": "zhangsan@example.com",
-  "password": "securepassword123"
-}
-```
-
-#### 5.1.2 用户登录 (`POST /api/auth/signin`)
-
-请求体结构：
-```json
-{
-  "email": "用户邮箱",
-  "password": "用户密码"
-}
-```
-
-示例：
-```json
-{
-  "email": "zhangsan@example.com",
-  "password": "securepassword123"
-}
-```
-
-### 5.2 用户 API
-
-#### 5.2.1 用户注册 (`POST /api/users/register`)
-
-请求体结构：
-```json
-{
-  "id": null,
-  "email": "用户邮箱",
-  "password": "用户密码",
-  "fullName": "用户全名",
-  "profilePicture": "头像URL（可选）",
-  "role": "用户角色（可选）",
-  "undergraduateSchool": "本科院校",
-  "gpa": 平均成绩（可选）,
-  "greScore": GRE总分（可选）,
-  "gmatScore": GMAT总分（可选）
-}
-```
-
-示例：
-```json
-{
-  "email": "zhangsan@example.com",
-  "password": "securepassword123",
-  "fullName": "张三",
-  "undergraduateSchool": "北京大学",
-  "gpa": 3.8,
-  "greScore": 320,
-  "gmatScore": 710
-}
-```
-
-#### 5.2.2 用户登录 (`POST /api/users/login`)
-
-请求体结构：
-```json
-{
-  "email": "用户邮箱",
-  "password": "用户密码"
-}
-```
-
-示例：
-```json
-{
-  "email": "zhangsan@example.com",
-  "password": "securepassword123"
-}
-```
-
-#### 5.2.3 更新用户信息 (`PUT /api/users/{id}`)
-
-请求体结构：
-```json
-{
-  "email": "用户邮箱（可选）",
-  "password": "新密码（可选）",
-  "fullName": "用户全名（可选）",
+  "password": "密码",
   "profilePicture": "头像URL（可选）",
   "undergraduateSchool": "本科院校（可选）",
-  "gpa": 平均成绩（可选）,
-  "greScore": GRE总分（可选）,
-  "gmatScore": GMAT总分（可选）
+  "gpa": 3.8,
+  "greScore": 320,
+  "gmatScore": 710,
+  "role": "USER"
 }
 ```
 
-示例：
+### 4.2 用户管理 (`/api/users`)
+
+#### 4.2.1 用户注册 (备用接口)
+```
+POST /api/users/register
+```
+
+#### 4.2.2 用户登录 (备用接口)
+```
+POST /api/users/login
+```
+
+#### 4.2.3 获取用户信息
+```
+GET /api/users/{id}
+```
+
+#### 4.2.4 更新用户信息
+```
+PUT /api/users/{id}
+```
+
+**请求体结构:**
 ```json
 {
-  "fullName": "张三丰",
+  "fullName": "更新的姓名",
+  "email": "更新的邮箱",
+  "currentSchool": "当前学校",
   "gpa": 3.9,
-  "greScore": 325
+  "greVerbal": 160,
+  "greQuantitative": 170,
+  "toeflTotal": 105
 }
 ```
 
-### 5.3 文书 API
+### 4.3 文书管理 (`/api/essays`)
 
-#### 5.3.1 创建文书 (`POST /api/essays`)
+#### 4.3.1 创建文书
+```
+POST /api/essays
+```
 
-请求体结构：
+**请求体结构:**
 ```json
 {
   "title": "文书标题",
   "content": "文书内容",
-  "userId": 用户ID,
-  "applicationId": 申请ID（可选）,
-  "wordLimit": 字数限制（可选）,
-  "essayType": "文书类型（可选）"
-}
-```
-
-示例：
-```json
-{
-  "title": "我的大学申请自述",
-  "content": "作为一名热爱计算机科学的高中生...",
   "userId": 1,
+  "schoolId": 42,
   "wordLimit": 500,
   "essayType": "个人陈述"
 }
 ```
 
-#### 5.3.2 优化文书 (`POST /api/essays/{id}/optimize`)
-
-该接口不需要请求体，通过路径参数 `id` 指定要优化的文书。
-
-### 5.4 文书生成 API
-
-#### 5.4.1 生成文书 (`POST /api/essays/generation`)
-
-请求体结构：
-```json
-{
-  "userId": 用户ID,
-  "schoolId": 学校ID,
-  "essayRequirementId": 文书要求ID,
-  
-  "major": "专业",
-  "degree": "学位",
-  "currentSchool": "本科院校",
-  "gpa": GPA,
-  "gradeScale": "GPA满分制",
-  
-  "toeflScore": 托福总分,
-  "toeflReading": 托福阅读,
-  "toeflListening": 托福听力,
-  "toeflSpeaking": 托福口语,
-  "toeflWriting": 托福写作,
-  
-  "ieltsScore": 雅思总分,
-  "ieltsReading": 雅思阅读,
-  "ieltsListening": 雅思听力,
-  "ieltsSpeaking": 雅思口语,
-  "ieltsWriting": 雅思写作,
-  
-  "greTotal": GRE总分,
-  "greVerbal": GRE语文,
-  "greQuantitative": GRE数学,
-  "greAnalytical": GRE分析性写作,
-  
-  "gmatTotal": GMAT总分,
-  "gmatVerbal": GMAT语文,
-  "gmatQuantitative": GMAT数学,
-  "gmatIntegrated": GMAT综合推理,
-  "gmatAnalytical": GMAT分析性写作,
-  
-  "researchExperience": ["研究经历1", "研究经历2"],
-  "workExperience": ["工作经历1", "工作经历2"],
-  "projectExperience": ["项目经历1", "项目经历2"],
-  "volunteerExperience": ["志愿者经历1", "志愿者经历2"],
-  "leadershipExperience": ["领导经历1", "领导经历2"],
-  "awards": ["奖项1", "奖项2"],
-  "publications": ["发表1", "发表2"],
-  
-  "strengths": ["优势1", "优势2"],
-  "weaknesses": ["劣势1", "劣势2"],
-  "careerGoals": ["职业目标1", "职业目标2"],
-  "personalStatement": "个人陈述",
-  "motivationForApplication": "申请动机",
-  
-  "whyThisSchool": "为什么选择该学校",
-  "fitWithProgram": "与项目的匹配度",
-  "specificProfessorsOfInterest": ["教授1", "教授2"],
-  "specificCoursesOfInterest": ["课程1", "课程2"]
-}
+#### 4.3.2 获取用户所有文书
+```
+GET /api/essays/user/{userId}
 ```
 
-示例：
+#### 4.3.3 获取特定文书
+```
+GET /api/essays/{id}
+```
+
+#### 4.3.4 更新文书
+```
+PUT /api/essays/{id}
+```
+
+#### 4.3.5 删除文书
+```
+DELETE /api/essays/{id}
+```
+
+### 4.4 文书生成 (`/api/essays/generation`)
+
+#### 4.4.1 AI文书生成
+```
+POST /api/essays/generation
+```
+
+**请求体结构:**
 ```json
 {
   "userId": 1,
@@ -346,119 +199,64 @@
   "greQuantitative": 170,
   "greAnalytical": 4.5,
   
-  "gmatTotal": 710,
-  
-  "researchExperience": ["参与了语义分析研究项目", "完成了机器学习算法的优化研究"],
-  "workExperience": ["在科技公司实习6个月", "参与开源项目贡献"],
-  "awards": ["本科优秀毕业生", "编程竞赛一等奖"],
+  "researchExperience": ["参与语义分析研究项目"],
+  "workExperience": ["科技公司实习6个月"],
+  "awards": ["优秀毕业生", "编程竞赛一等奖"],
   
   "strengths": ["解决问题能力强", "善于团队协作"],
-  "careerGoals": ["成为人工智能专家", "开发创新的深度学习应用"],
-  "personalStatement": "我的本科研究经历激发了我对人工智能的深入兴趣...",
-  "motivationForApplication": "贵校在机器学习领域的卓越研究让我深受启发...",
+  "careerGoals": ["成为AI专家"],
+  "personalStatement": "我的研究经历激发了我对AI的兴趣...",
   
-  "whyThisSchool": "作为人工智能领域的顶尖学府...",
-  "specificProfessorsOfInterest": ["张教授（机器学习）", "李教授（计算机视觉）"],
-  "specificCoursesOfInterest": ["高级深度学习", "计算机视觉与应用"]
+  "whyThisSchool": "贵校在AI领域的卓越研究...",
+  "specificProfessorsOfInterest": ["张教授（机器学习）"],
+  "specificCoursesOfInterest": ["高级深度学习"]
 }
 ```
 
-#### 5.4.2 获取文书要求 (`GET /api/essays/generation/requirements`)
+### 4.5 文书润色 (`/api/essays/polish`)
 
-此接口通过查询参数传递信息，不需要请求体。
-
-### 5.5 文书润色 API
-
-#### 5.5.1 润色文书 (`POST /api/essays/polish`)
-
-请求体结构：
-```json
-{
-  "essayId": 文书ID（可选，如果是对已有文书润色）,
-  "userId": 用户ID,
-  "originalContent": "原始文书内容",
-  
-  "improveStructure": true/false,
-  "enhanceLanguage": true/false,
-  "checkGrammar": true/false,
-  "reduceClichés": true/false,
-  "addExamples": true/false,
-  
-  "focusPoints": ["关注点1", "关注点2"],
-  "avoidPoints": ["避免点1", "避免点2"],
-  "targetAudience": "目标读者",
-  
-  "targetWordCount": 目标字数,
-  "tonePreference": "语言风格偏好"
-}
+#### 4.5.1 润色文书
+```
+POST /api/essays/polish
 ```
 
-示例：
+**请求体结构:**
 ```json
 {
+  "essayId": 123,
   "userId": 1,
-  "originalContent": "我希望能够被贵校录取，因为贵校是一所很好的学校...",
+  "originalContent": "原始文书内容",
   "improveStructure": true,
   "enhanceLanguage": true,
   "checkGrammar": true,
   "reduceClichés": true,
-  
-  "focusPoints": ["突出我的领导能力", "强调创新思维"],
-  "avoidPoints": ["避免过度谦虚", "不要使用陈词滥调"],
+  "addExamples": false,
+  "focusPoints": ["突出领导能力", "强调创新思维"],
+  "avoidPoints": ["避免过度谦虚"],
   "targetAudience": "招生委员会",
-  
   "targetWordCount": 500,
   "tonePreference": "专业且个人化"
 }
 ```
 
-### 5.6 推荐 API
-
-#### 5.6.1 生成推荐 (`POST /api/recommendations/generate`)
-
-请求体结构：
-```json
-{
-  "userId": 用户ID,
-  "gpa": GPA,
-  "undergraduateSchool": "本科院校",
-  "toeflScore": 托福分数,
-  "ieltsScore": 雅思分数,
-  "greScore": GRE总分,
-  "greVerbal": GRE语文分数,
-  "greQuantitative": GRE数学分数,
-  "greAnalytical": GRE分析性写作分数,
-  "gmatScore": GMAT总分,
-  
-  "targetMajor": "目标专业",
-  "targetDegree": "目标学位（硕士/博士）",
-  "locationPreferences": ["地区偏好1", "地区偏好2"],
-  "schoolTypePreferences": ["学校类型偏好1", "学校类型偏好2"],
-  
-  "recommendationType": "推荐类型（SCHOOL/PROGRAM）",
-  "count": 推荐数量,
-  
-  "researchWeight": 研究经历权重,
-  "internshipWeight": 实习经历权重,
-  "volunteeringWeight": 志愿服务权重,
-  "leadershipWeight": 领导经历权重,
-  "publicationWeight": 发表论文权重,
-  
-  "researchExperience": "研究经历摘要",
-  "internshipExperience": "实习经历摘要",
-  "volunteeringExperience": "志愿服务经历摘要",
-  "leadershipExperience": "领导经历摘要",
-  "publications": "发表的论文摘要",
-  
-  "includeScholarshipInfo": true/false,
-  "includeTuitionInfo": true/false,
-  "includeAdmissionStatistics": true/false,
-  "includeMatchExplanation": true/false,
-  "includeFacultyInfo": true/false
-}
+#### 4.5.2 润色现有文书
+```
+POST /api/essays/polish/{essayId}
 ```
 
-示例：
+#### 4.5.3 获取润色建议
+```
+GET /api/essays/polish/suggestions/{essayId}
+```
+
+### 4.6 学校推荐 (`/api/recommendations`)
+
+#### 4.6.1 生成推荐
+```
+POST /api/recommendations/generate
+```
+
+**请求体结构:**
 ```json
 {
   "userId": 1,
@@ -482,133 +280,184 @@
   "internshipWeight": 3,
   "publicationWeight": 4,
   
-  "researchExperience": "参与了语义分析研究项目，完成了机器学习算法的优化研究",
-  "internshipExperience": "在科技公司实习6个月，负责后端开发",
-  "publications": "在国内核心期刊发表论文《机器学习在自然语言处理中的应用》",
-  
   "includeScholarshipInfo": true,
   "includeTuitionInfo": true,
-  "includeAdmissionStatistics": true,
-  "includeMatchExplanation": true,
-  "includeFacultyInfo": true
+  "includeAdmissionStatistics": true
 }
 ```
 
-#### 5.6.2 提交反馈 (`POST /api/recommendations/feedback/{itemId}`)
-
-请求体结构：
-```json
-{
-  "feedback": "反馈内容",
-  "applied": true/false
-}
+#### 4.6.2 获取用户推荐
+```
+GET /api/recommendations/user/{userId}
 ```
 
-示例：
+#### 4.6.3 提交推荐反馈
+```
+POST /api/recommendations/feedback/{itemId}
+```
+
+**请求体结构:**
 ```json
 {
-  "feedback": "这所学校的推荐非常符合我的期望",
+  "feedback": "推荐很符合期望",
   "applied": true
 }
 ```
 
-### 5.7 论坛 API
+#### 4.6.4 获取简化推荐
+```
+GET /api/recommendations/simple/{userId}
+```
 
-#### 5.7.1 创建帖子 (`POST /api/forum/posts`)
+#### 4.6.5 获取所有学校
+```
+GET /api/recommendations/schools
+```
 
-请求体结构：
+#### 4.6.6 获取学校详情
+```
+GET /api/recommendations/schools/{id}
+```
+
+### 4.7 论坛系统 (`/api/forum`)
+
+#### 4.7.1 获取帖子列表
+```
+GET /api/forum/posts?page=0&size=10&keyword=关键词
+```
+
+**查询参数:**
+- `page`: 页码 (默认0)
+- `size`: 每页大小 (默认10)  
+- `keyword`: 搜索关键词 (可选)
+
+#### 4.7.2 创建帖子
+```
+POST /api/forum/posts
+```
+
+**请求体结构:**
 ```json
 {
-  "authorId": 作者ID,
   "title": "帖子标题",
   "content": "帖子内容"
 }
 ```
 
-示例：
-```json
-{
-  "authorId": 1,
-  "title": "分享我的常青藤申请经验",
-  "content": "作为一名刚被哈佛录取的学生，我想分享一下我的申请经验..."
-}
+#### 4.7.3 获取帖子详情
+```
+GET /api/forum/posts/{postId}
 ```
 
-#### 5.7.2 添加评论 (`POST /api/forum/posts/{id}/comments`)
+#### 4.7.4 添加评论
+```
+POST /api/forum/posts/{postId}/comments
+```
 
-请求体结构：
+**请求体结构:**
 ```json
 {
-  "authorId": 作者ID,
   "content": "评论内容"
 }
 ```
 
-示例：
-```json
-{
-  "authorId": 2,
-  "content": "感谢分享！请问你的SAT分数是多少？"
-}
+#### 4.7.5 切换点赞状态
+```
+POST /api/forum/posts/{postId}/toggle-like
 ```
 
-### 5.8 管理员 API
+### 4.8 管理员接口 (`/api/admin`)
 
-#### 5.8.1 添加新学校 (`POST /api/admin/schools`)
-
-请求体结构：
-```json
-{
-  "name": "学校名称",
-  "location": "学校位置",
-  "ranking": 排名,
-  "acceptanceRate": 录取率,
-  "averageGREVerbal": 平均GRE语文,
-  "averageGREQuant": 平均GRE数学,
-  "averageGREAW": 平均GRE分析性写作,
-  "averageGMAT": 平均GMAT,
-  "averageGPA": 平均GPA,
-  "description": "学校描述",
-  "website": "学校网站",
-  "imageUrl": "学校图片URL",
-  "hasScholarship": 是否提供奖学金,
-  "tuitionFee": 学费,
-  "admissionRequirements": "录取要求",
-  "topPrograms": ["顶尖项目1", "顶尖项目2"]
-}
+#### 4.8.1 学校管理
+```
+POST /api/admin/schools    # 创建学校
+PUT /api/admin/schools/{id}    # 更新学校
+DELETE /api/admin/schools/{id}    # 删除学校
+GET /api/admin/schools    # 获取所有学校
 ```
 
-示例：
-```json
-{
-  "name": "斯坦福大学",
-  "location": "加利福尼亚州",
-  "ranking": 2,
-  "acceptanceRate": 0.042,
-  "averageGREVerbal": 165,
-  "averageGREQuant": 168,
-  "averageGREAW": 4.8,
-  "averageGMAT": 732,
-  "averageGPA": 3.96,
-  "description": "斯坦福大学是一所位于美国加利福尼亚州的私立研究型大学...",
-  "website": "https://www.stanford.edu",
-  "imageUrl": "https://example.com/stanford.jpg",
-  "hasScholarship": true,
-  "tuitionFee": 60000,
-  "admissionRequirements": "GRE、托福、本科成绩单、推荐信、个人陈述",
-  "topPrograms": ["计算机科学", "商业管理", "电子工程"]
-}
+#### 4.8.2 用户管理
+```
+GET /api/admin/users    # 获取所有用户
+POST /api/admin/users/create-admin    # 创建管理员
+PUT /api/admin/users/{userId}/role    # 更新用户角色
+POST /api/admin/users/{userId}/reset-password    # 重置密码
 ```
 
-#### 5.8.2 更新学校信息 (`PUT /api/admin/schools/{id}`)
+## 5. 数据模型
 
-请求体结构与添加新学校相同，可以只包含需要更新的字段。
+### 5.1 核心实体
 
-示例：
-```json
-{
-  "ranking": 3,
-  "acceptanceRate": 0.045,
-  "averageGREVerbal": 166
-}
+#### User (用户)
+- 基本信息: id, fullName, email, password
+- 学术背景: currentSchool, gpa, major
+- 标准化考试: toeflTotal, greVerbal, greQuantitative, gmatTotal
+- 系统信息: role, status, createdAt, updatedAt
+
+#### School (学校)
+- 基本信息: name, location, ranking, website
+- 录取信息: acceptanceRate, averageGPA, averageGRE, averageGMAT
+- 其他: description, imageUrl, hasScholarship, tuitionFee
+
+#### Essay (文书)
+- 内容: title, content, wordLimit, essayType
+- 关联: userId, schoolId, essayRequirementId
+- 状态: status, version, createdAt, updatedAt
+
+#### ForumPost (论坛帖子)
+- 内容: title, content, authorId
+- 互动: likeCount, commentCount, comments, likes
+- 时间: createdAt, updatedAt
+
+#### Recommendation (推荐)
+- 用户信息: userId, requestData
+- 推荐结果: recommendationItems
+- 统计: totalRecommendations, createdAt
+
+## 6. 安全配置
+
+### 6.1 认证方式
+- JWT Token认证
+- 支持角色权限控制 (USER, ADMIN)
+
+### 6.2 API安全策略
+- 公开接口: 登录、注册、部分论坛查看
+- 需要认证: 文书操作、推荐生成、论坛发布
+- 管理员权限: 用户管理、学校管理
+
+## 7. 部署配置
+
+### 7.1 数据库配置
+```properties
+spring.datasource.url=jdbc:mysql:///admitgenius_db
+spring.datasource.username=root
+spring.datasource.password=YOUR_PASSWORD
 ```
+
+### 7.2 JWT配置
+```properties
+app.jwt.secret=YOUR_JWT_SECRET
+app.jwt.expiration-ms=86400000
+```
+
+### 7.3 OpenAI配置
+```properties
+openai.api.key=YOUR_OPENAI_API_KEY
+```
+
+## 8. 开发指南
+
+### 8.1 项目启动
+1. 配置MySQL数据库
+2. 更新application.properties中的数据库密码和API密钥
+3. 运行 `mvn spring-boot:run`
+4. 访问 `http://localhost:7077`
+
+### 8.2 API测试
+建议使用Postman或类似工具测试API端点，注意需要在请求头中包含JWT令牌：
+```
+Authorization: Bearer YOUR_JWT_TOKEN
+```
+
+### 8.3 数据库初始化
+首次运行时会自动创建数据库表结构，可以通过运行create_table.sql来初始化基础数据。
